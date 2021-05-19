@@ -40,6 +40,7 @@ import (
 	"cmd/go/internal/trace"
 	"cmd/internal/sys"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 )
@@ -674,7 +675,19 @@ func loadImport(ctx context.Context, opts PackageOpts, pre *preload, path, srcDi
 		parentRoot = parent.Root
 		parentIsStd = parent.Standard
 	}
+
 	bp, loaded, err := loadPackageData(ctx, path, parentPath, srcDir, parentRoot, parentIsStd, mode)
+	bp2, loaded2, err2 := loadPackageDataCached(ctx, path, parentPath, srcDir, parentRoot, parentIsStd, mode)
+	if diff := cmp.Diff(bp, bp2); diff != "" {
+		fmt.Println("mismatch (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(loaded, loaded2); diff != "" {
+		fmt.Println("mismatch (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(err, err2); diff != "" {
+		fmt.Println("mismatch (-want +got):\n%s", diff)
+	}
+
 	if loaded && pre != nil && !opts.IgnoreImports {
 		pre.preloadImports(ctx, opts, bp.Imports, bp)
 	}
